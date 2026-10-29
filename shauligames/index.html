@@ -1,0 +1,558 @@
+<!--
+  מאת: שאולי כהן
+  © 2026 — כל הזכויות שמורות
+  shauligames.netlify.app
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hangman &amp; User Management</title>
+  <style>
+    :root {
+      --bg: #1f2b34;
+      --panel: #2a3a46;
+      --line: #3f5362;
+      --chalk: #ece8da;
+      --dim: #a9b4ba;
+      --gold: #f2c14e;
+      --ok: #8fd18f;
+      --bad: #e08a8a;
+      --ink: #16202a
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--chalk);
+      font: 16px/1.5 "Iowan Old Style", Palatino, Georgia, serif;
+      min-height: 100vh
+    }
+
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 28px 18px;
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 20px
+    }
+
+    h1 {
+      grid-column: 1/-1;
+      margin: 0 0 4px;
+      font-size: 30px;
+      font-weight: 600;
+      letter-spacing: .2px
+    }
+
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 16px
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      font-weight: 600
+    }
+
+    #users {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-height: 430px;
+      overflow: auto
+    }
+
+    #users li button {
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      color: inherit;
+      font: inherit;
+      padding: 9px 10px;
+      cursor: pointer
+    }
+
+    #users li button:hover {
+      background: #33475505;
+      background: #334755
+    }
+
+    #users li button[aria-pressed=true] {
+      background: var(--gold);
+      color: var(--ink);
+      font-weight: 600
+    }
+
+    .empty {
+      color: var(--dim)
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px
+    }
+
+    .actions hr {
+      border: 0;
+      border-top: 1px solid var(--line);
+      margin: 6px 0;
+      width: 100%
+    }
+
+    button.b {
+      background: transparent;
+      color: var(--chalk);
+      border: 1px solid var(--dim);
+      border-radius: 4px;
+      padding: 8px 12px;
+      font: inherit;
+      cursor: pointer
+    }
+
+    button.b:hover {
+      border-color: var(--chalk);
+      background: #334755
+    }
+
+    button.b.main {
+      background: var(--gold);
+      color: var(--ink);
+      border-color: var(--gold);
+      font-weight: 600
+    }
+
+    button:focus-visible,
+    input:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 2px
+    }
+
+    .note {
+      color: var(--dim);
+      font-size: 14px;
+      margin: 4px 0
+    }
+
+    dialog {
+      background: var(--panel);
+      color: var(--chalk);
+      border: 1px solid var(--dim);
+      border-radius: 8px;
+      padding: 20px;
+      width: min(94vw, 440px);
+      font: inherit
+    }
+
+    dialog::backdrop {
+      background: #0009
+    }
+
+    dialog h2 {
+      font-size: 20px
+    }
+
+    .msg {
+      white-space: pre-line;
+      margin: 0 0 14px
+    }
+
+    label {
+      display: block;
+      margin: 0 0 10px
+    }
+
+    label span {
+      display: block;
+      font-size: 14px;
+      color: var(--dim)
+    }
+
+    input {
+      width: 100%;
+      padding: 8px;
+      background: var(--ink);
+      color: var(--chalk);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      font: inherit
+    }
+
+    .row {
+      display: flex;
+      flex-direction: row-reverse;
+      gap: 8px;
+      margin-top: 14px
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+      margin-bottom: 12px
+    }
+
+    th,
+    td {
+      padding: 6px 4px;
+      text-align: center;
+      border-bottom: 1px solid var(--line)
+    }
+
+    th {
+      color: var(--dim);
+      font-weight: 400;
+      font-size: 13px
+    }
+
+    td:nth-child(2) {
+      text-align: left
+    }
+
+    .game {
+      text-align: center
+    }
+
+    .game svg {
+      width: 150px;
+      height: 170px;
+      stroke: var(--chalk);
+      stroke-width: 3;
+      fill: none;
+      stroke-linecap: round
+    }
+
+    .game .p {
+      display: none
+    }
+
+    #word {
+      font: 700 30px ui-monospace, Menlo, Consolas, monospace;
+      letter-spacing: 6px;
+      margin: 4px 0
+    }
+
+    #info {
+      color: var(--dim);
+      font-size: 14px;
+      margin-bottom: 10px
+    }
+
+    .kb {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px
+    }
+
+    .kb button {
+      padding: 8px 0;
+      border: 1px solid var(--dim);
+      background: var(--ink);
+      color: var(--chalk);
+      border-radius: 4px;
+      font: 700 15px ui-monospace, Menlo, Consolas, monospace;
+      cursor: pointer
+    }
+
+    .kb button:disabled {
+      cursor: default;
+      color: var(--ink)
+    }
+
+    .kb button.hit {
+      background: var(--ok)
+    }
+
+    .kb button.miss {
+      background: var(--bad)
+    }
+
+    @media(max-width:700px) {
+      main {
+        grid-template-columns: 1fr
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <h1>Hangman</h1>
+    <section>
+      <h2>Users</h2>
+      <ul id="users"></ul>
+    </section>
+    <section class="actions">
+      <button class="b" data-a="add">Add user</button>
+      <button class="b" data-a="check">Check if user exists</button>
+      <button class="b" data-a="del">Delete selected user</button>
+      <button class="b" data-a="upd">Update selected user</button>
+      <button class="b" data-a="login">Log in (check password)</button>
+      <hr>
+      <button class="b main" data-a="play">Play Hangman</button>
+      <button class="b" data-a="score">Show Hangman score</button>
+      <button class="b" data-a="board">Show leaderboard</button>
+      <hr>
+      <p class="note">Password policy: at least 8 characters, with at least one uppercase and one lowercase letter.</p>
+      <p class="note">Fewer wrong guesses means more points.</p>
+    </section>
+  </main>
+  <dialog id="d"></dialog>
+
+  <script>
+    "use strict";
+    // ---------- data WORDS ----------
+    const WORDS = ["FISH", "BIRD", "LAMP", "DESK", "RAIN", "SNOW", "WIND", "STAR", "MOON", "BOOK", "DOOR", "ROAD", "TREE", "LEAF", "ROCK", "SAND", "LAKE", "HILL", "CAVE", "GOLD", "RING", "SHIP", "BOAT", "FIRE", "GATE", "WOLF", "BEAR", "DEER", "FROG", "DUCK"];
+    const MAX_WRONG = 6, ITER = 200000, KEY = "hangman_users_v1";
+    const SCORE_TEXT = "How scoring works:\n- A win scores 10 points for every wrong guess you didn't make.\n  Formula: (6 - wrong guesses + 1) x 10\n  Perfect game = 70, 1 wrong = 60, 2 = 50, 3 = 40, 4 = 30, 5 = 20.\n- A loss scores 0 points.\n- Your total score is the sum of points from every game you've won.";
+    const ERRORS = { user_not_found: "User not found.", wrong_password: "Current password is incorrect. Nothing was changed.", username_taken: "That username is already taken." };
+
+    // Starting data copied from users_data.json (same PBKDF2 salts/hashes, so the old passwords still work).
+    const SEED = {
+      shauli: { salt: "4e6aaa5e9a662034a2ef83014ed7a9aa", hash: "3627c286ae58f396d478d0ea9821cdf5d5a72528ed9c1a99263c12c5c1792f70", score: 70, games_played: 2, games_won: 1 },
+      cohen: { salt: "1c666269a1f3e0a293f0bd660550da87", hash: "3991c08d39e38e2e3ed36e3ecb9c58d1fb2300847c725697cb1060d9e54ed0c7", score: 110, games_played: 2, games_won: 2 }
+    };
+
+    // ---------- data layer (port of user_management.py) ----------
+    let users = null;
+    try { users = JSON.parse(localStorage.getItem(KEY)); } catch (e) { }
+    if (!users || typeof users !== "object") users = structuredClone(SEED);
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify(users)); } catch (e) { } };
+
+    const toHex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+    const fromHex = h => Uint8Array.from(h.match(/../g) || [], x => parseInt(x, 16));
+
+    async function hashPassword(pw, salt) {
+      salt = salt || toHex(crypto.getRandomValues(new Uint8Array(16)));
+      const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveBits"]);
+      const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt: fromHex(salt), iterations: ITER, hash: "SHA-256" }, key, 256);
+      return { salt, hash: toHex(bits) };
+    }
+    async function verifyPassword(pw, rec) {
+      if (!rec || !rec.salt || !rec.hash) return false;
+      return (await hashPassword(pw, rec.salt)).hash === rec.hash;
+    }
+    const findUser = name => Object.keys(users).find(u => u.toLowerCase() === String(name).toLowerCase()) ?? null;
+    const passwordPolicy = pw => pw.length >= 8 && /\p{Lu}/u.test(pw) && /\p{Ll}/u.test(pw);
+
+    async function addUser(name, pw) {
+      if (findUser(name) !== null) return false;
+      users[name] = { ...await hashPassword(pw), score: 0, games_played: 0, games_won: 0 };
+      return true;
+    }
+    async function updateUser(oldName, oldPw, newName, newPw) {
+      const name = findUser(oldName);
+      if (name === null) return "user_not_found";
+      if (!oldPw || !(await verifyPassword(oldPw, users[name]))) return "wrong_password";
+      if (newName && newName.toLowerCase() !== name.toLowerCase() && findUser(newName) !== null) return "username_taken";
+      let rec = users[name];
+      delete users[name];
+      if (newPw) {
+        const stats = { score: rec.score || 0, games_played: rec.games_played || 0, games_won: rec.games_won || 0 };
+        rec = { ...await hashPassword(newPw), ...stats };
+      }
+      users[newName || name] = rec;
+      return null;
+    }
+    const statsOf = name => { const r = users[findUser(name)]; return r && { score: r.score || 0, games_played: r.games_played || 0, games_won: r.games_won || 0 }; };
+    const computeScore = wrong => Math.max(10, (MAX_WRONG - wrong + 1) * 10);
+    function recordResult(name, won, pts) {
+      const r = users[findUser(name)];
+      r.games_played = (r.games_played || 0) + 1;
+      if (won) { r.games_won = (r.games_won || 0) + 1; r.score = (r.score || 0) + pts; }
+    }
+    function leaderboard() {
+      return Object.keys(users).map(u => {
+        const s = statsOf(u);
+        return { username: u, ...s, win_rate: s.games_played ? Math.round(s.games_won / s.games_played * 100) : 0 };
+      }).sort((a, b) => b.score - a.score || b.win_rate - a.win_rate);
+    }
+
+    // ---------- dialog helpers ----------
+    const D = document.getElementById("d");
+    const el = (tag, props = {}, ...kids) => { const n = Object.assign(document.createElement(tag), props); n.append(...kids); return n; };
+
+    function show(title, body, buttons) {
+      return new Promise(resolve => {
+        const form = el("form", { method: "dialog" }, el("h2", { textContent: title }), body);
+        const row = el("div", { className: "row" });
+        buttons.forEach(([label, value, main]) =>
+          row.append(el("button", { type: "submit", value, textContent: label, className: "b" + (main ? " main" : "") })));
+        form.append(row);
+        D.replaceChildren(form);
+        D.returnValue = "";
+        D.addEventListener("close", () => {
+          const vals = {};
+          form.querySelectorAll("input").forEach(i => vals[i.name] = i.value);
+          resolve({ r: D.returnValue, vals });
+        }, { once: true });
+        D.showModal();
+        const first = form.querySelector("input"); if (first) first.focus();
+      });
+    }
+    const tell = (title, text) => show(title, el("p", { className: "msg", textContent: text }), [["OK", "ok", true]]);
+    const confirmBox = async (title, text) => (await show(title, el("p", { className: "msg", textContent: text }), [["Yes", "ok", true], ["No", "no"]])).r === "ok";
+    async function ask(title, fields, okLabel = "OK") {
+      const body = el("div");
+      fields.forEach(([name, label, type]) =>
+        body.append(el("label", {}, el("span", { textContent: label }), el("input", { name, type: type || "text", autocomplete: "off" }))));
+      const { r, vals } = await show(title, body, [[okLabel, "ok", true], ["Cancel", "cancel"]]);
+      return r === "ok" ? vals : null;
+    }
+
+    // ---------- main screen ----------
+    let selected = null;
+    function render() {
+      const ul = document.getElementById("users");
+      ul.replaceChildren();
+      const names = Object.keys(users);
+      if (selected && !names.includes(selected)) selected = null;
+      if (!names.length) ul.append(el("li", { className: "empty", textContent: "No users yet. Add one to get started." }));
+      names.forEach(n => ul.append(el("li", {}, el("button", {
+        type: "button", textContent: n, "aria-pressed": String(n === selected),
+        onclick: () => { selected = n; render(); }
+      }))));
+    }
+    const needSelection = async () => { if (selected) return selected; await tell("Select a user", "Select a user from the list first."); return null; };
+
+    const actions = {
+      async add() {
+        const v = await ask("Add user", [["u", "Username"], ["p", "Password", "password"], ["c", "Confirm password", "password"]], "Add user");
+        if (!v) return;
+        const name = v.u.trim();
+        if (!name) return tell("Error", "Username cannot be empty.");
+        if (!passwordPolicy(v.p)) return tell("Invalid password", "Use at least 8 characters, with at least one uppercase and one lowercase letter.");
+        if (v.p !== v.c) return tell("Error", "Passwords do not match.");
+        if (await addUser(name, v.p)) { save(); render(); tell("User added", `User '${name}' was added.`); }
+        else tell("Error", "That user already exists.");
+      },
+      async check() {
+        const v = await ask("Check user", [["u", "Username to check"]], "Check");
+        if (!v || !v.u) return;
+        tell("Result", `User '${v.u}' ${findUser(v.u) !== null ? "exists" : "does not exist"}.`);
+      },
+      async del() {
+        const u = await needSelection(); if (!u) return;
+        if (!(await confirmBox("Confirm", `Delete user '${u}'?`))) return;
+        delete users[u]; save(); render();
+        tell("User deleted", `User '${u}' was deleted.`);
+      },
+      async upd() {
+        const u = await needSelection(); if (!u) return;
+        const v = await ask("Update user", [["u", "New username (leave empty to keep current)"], ["p", "New password (leave empty to keep current)", "password"]], "Continue");
+        if (!v) return;
+        const newName = v.u.trim() || null, newPw = v.p.trim() || null;
+        if (!newName && !newPw) return;
+        if (newPw && !passwordPolicy(newPw)) return tell("Invalid password", "The new password does not meet the policy. Update cancelled.");
+        const c = await ask("Confirm identity", [["o", `Current password for '${u}'`, "password"]], "Update");
+        if (!c || !c.o) return c && tell("Cancelled", "Update cancelled: the current password is required.");
+        const err = await updateUser(u, c.o, newName, newPw);
+        if (err) return tell("Error", ERRORS[err] || "Update failed.");
+        if (newName) selected = newName;
+        save(); render(); tell("User updated", "User updated.");
+      },
+      async login() {
+        const v = await ask("Log in", [["u", "Username"], ["p", "Password", "password"]], "Log in");
+        if (!v || !v.u) return;
+        const name = findUser(v.u);
+        const ok = name !== null && await verifyPassword(v.p, users[name]);
+        tell("Log in", ok ? "Login successful." : "Login failed.");
+      },
+      async score() {
+        const u = await needSelection(); if (!u) return;
+        const s = statsOf(u);
+        tell("Hangman score", `Player: ${u}\n\nScore: ${s.score}\nGames played: ${s.games_played}\nGames won: ${s.games_won}\n\n${SCORE_TEXT}`);
+      },
+      async board() {
+        const lb = leaderboard();
+        if (!lb.length) return tell("Leaderboard", "No users yet. Add a user first.");
+        const t = el("table", {}, el("tr", {}, ...["Rank", "Username", "Score", "Played", "Won", "Win rate"].map(h => el("th", { textContent: h }))));
+        lb.forEach((e, i) => t.append(el("tr", {}, ...[i + 1, e.username, e.score, e.games_played, e.games_won, e.win_rate + "%"].map(x => el("td", { textContent: x })))));
+        const body = el("div", {}, t, el("p", { className: "note", style: "white-space:pre-line", textContent: SCORE_TEXT }));
+        show("Hangman leaderboard", body, [["Close", "ok", true]]);
+      },
+      async play() {
+        const u = await needSelection(); if (!u) return;
+        await playGame(u);
+      }
+    };
+    document.querySelector(".actions").addEventListener("click", e => {
+      const a = e.target.closest("[data-a]");
+      if (a) actions[a.dataset.a]();
+    });
+
+    // ---------- the game ----------
+    async function playGame(user) {
+      const word = WORDS[Math.floor(Math.random() * WORDS.length)];
+      const guessed = new Set();
+      let wrong = 0;
+
+      const svg = `<svg viewBox="0 0 160 180" aria-hidden="true">
+    <path d="M20 170H110M45 170V15H105V35"/>
+    <circle class="p" cx="105" cy="50" r="15"/><path class="p" d="M105 65V110"/>
+    <path class="p" d="M105 75L85 95"/><path class="p" d="M105 75L125 95"/>
+    <path class="p" d="M105 110L88 140"/><path class="p" d="M105 110L122 140"/></svg>`;
+      const wordEl = el("div", { id: "word", "aria-live": "polite" });
+      const info = el("div", { id: "info" });
+      const kb = el("div", { className: "kb" });
+      const game = el("div", { className: "game" }, wordEl, info, kb);
+      game.insertAdjacentHTML("afterbegin", svg);
+      const parts = game.querySelectorAll(".p");
+      const btns = {};
+      for (const L of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
+        btns[L] = el("button", { type: "button", textContent: L, onclick: () => guess(L) });
+        kb.append(btns[L]);
+      }
+
+      function refresh() {
+        parts.forEach((p, i) => p.style.display = i < wrong ? "block" : "none");
+        wordEl.textContent = [...word].map(c => guessed.has(c) ? c : "_").join(" ");
+        info.textContent = `Wrong guesses: ${wrong}/${MAX_WRONG} (remaining: ${MAX_WRONG - wrong})`;
+      }
+      function guess(L) {
+        if (!D.open || guessed.has(L)) return;
+        guessed.add(L);
+        const hit = word.includes(L);
+        if (!hit) wrong++;
+        btns[L].disabled = true;
+        btns[L].classList.add(hit ? "hit" : "miss");
+        refresh();
+        if ([...word].every(c => guessed.has(c))) D.close("won");
+        else if (wrong >= MAX_WRONG) D.close("lost");
+      }
+      const onKey = e => {
+        if (e.ctrlKey || e.metaKey || e.altKey || !/^[a-z]$/i.test(e.key)) return;
+        guess(e.key.toUpperCase());
+      };
+      refresh();
+      document.addEventListener("keydown", onKey);
+      const { r } = await show(`Hangman: ${user}`, game, [["Give up", "quit"]]);
+      document.removeEventListener("keydown", onKey);
+
+      // Closing the dialog mid-game (Give up / Esc) counts as a loss.
+      const won = r === "won";
+      const pts = won ? computeScore(wrong) : 0;
+      recordResult(user, won, pts);
+      save();
+      if (won) await tell("You won!", `Great job! You earned ${pts} points.`);
+      else await tell("Game over", r === "lost" ? `Out of guesses! The word was '${word}'.` : `You gave up. The word was '${word}'. This counts as a loss.`);
+    }
+
+    render();
+  </script>
+</body>
+
+</html>

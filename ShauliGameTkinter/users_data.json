@@ -1,0 +1,18 @@
+{
+  "users": {
+    "shauli": {
+      "salt": "4e6aaa5e9a662034a2ef83014ed7a9aa",
+      "hash": "3627c286ae58f396d478d0ea9821cdf5d5a72528ed9c1a99263c12c5c1792f70",
+      "score": 70,
+      "games_played": 2,
+      "games_won": 1
+    },
+    "cohen": {
+      "salt": "1c666269a1f3e0a293f0bd660550da87",
+      "hash": "3991c08d39e38e2e3ed36e3ecb9c58d1fb2300847c725697cb1060d9e54ed0c7",
+      "score": 110,
+      "games_played": 2,
+      "games_won": 2
+    }
+  }
+}
